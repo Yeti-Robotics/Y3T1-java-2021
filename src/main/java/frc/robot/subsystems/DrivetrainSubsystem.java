@@ -2,125 +2,219 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.VictorSPXControlMode;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.ctre.phoenix.motorcontrol.can.VictorSPX;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import com.ctre.phoenix.motorcontrol.InvertType;
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.PWMTalonSRX;
+import edu.wpi.first.wpilibj.PWMVictorSPX;
+import edu.wpi.first.wpilibj.SpeedControllerGroup;
+import edu.wpi.first.wpilibj.Talon;
+import edu.wpi.first.wpilibj.Victor;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.geometry.Pose2d;
+import edu.wpi.first.wpilibj.interfaces.Accelerometer;
+import edu.wpi.first.wpilibj.interfaces.Gyro;
+import edu.wpi.first.wpilibj.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.wpilibj.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.wpilibj.util.WPILibVersion;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import edu.wpi.first.wpilibj.Encoder;
 
 public class DrivetrainSubsystem extends SubsystemBase {
-    private TalonSRX leftTalon, rightTalon;
+  private final PWMTalonSRX leftTalon1 = new PWMTalonSRX(Constants.kLeftMotor1Port);
+  private final PWMVictorSPX leftVictor1 = new PWMVictorSPX(Constants.kLeftMotor2Port);
+  private final PWMVictorSPX leftVictor2 = new PWMVictorSPX(Constants.kLeftMotor3Port);
 
-    private VictorSPX leftVictor1, leftVictor2, rightVictor1, rightVictor2;
-    
-    private Encoder leftEncoder, rightEncoder;
+  private final PWMTalonSRX rightTalon1 = new PWMTalonSRX(Constants.kRightMotor1Port);
+  private final PWMVictorSPX rightVictor1 = new PWMVictorSPX(Constants.kRightMotor2Port);
+  private final PWMVictorSPX rightVictor2 = new PWMVictorSPX(Constants.kRightMotor3Port);
 
-    public DrivetrainSubsystem() {
-        
-        leftTalon = new TalonSRX(Constants.LEFT_TALON);
-        leftVictor1 = new VictorSPX(Constants.LEFT_VICTOR_1);
-        leftVictor2 = new VictorSPX(Constants.LEFT_VICTOR_2);
-        rightTalon = new TalonSRX(Constants.RIGHT_TALON);
-        rightVictor1 = new VictorSPX(Constants.RIGHT_VICTOR_1);
-        rightVictor2 = new VictorSPX(Constants.RIGHT_VICTOR_2);
+  // The robot's drive
+  private final SpeedControllerGroup m_leftMotors =
+      new SpeedControllerGroup(leftTalon1, leftVictor1, leftVictor2);
+    private final SpeedControllerGroup m_rightMotors =
+      new SpeedControllerGroup(rightTalon1, rightVictor1, rightVictor2);
 
-//         leftTalon.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor,0,0);
-//         rightTalon.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor,0,0);
-        
-        leftEncoder = new Encoder(Constants.LEFT_ENCODER_A, Constants.LEFT_ENCODER_B);
-        rightEncoder = new Encoder(Constants.RIGHT_ENCODER_A, Constants.RIGHT_ENCODER_B);
+    public final DifferentialDrive m_drive = new DifferentialDrive(m_leftMotors, m_rightMotors);
 
-        // metalShavings = 42069;
+    private final Encoder m_leftEncoder =
+      new Encoder(Constants.kLeftEncoderPorts[0], Constants.kLeftEncoderPorts[1],
+                  Constants.kLeftEncoderReversed);
 
-        leftTalon.setNeutralMode(NeutralMode.Brake);
-        leftVictor1.setNeutralMode(NeutralMode.Brake);
-        leftVictor2.setNeutralMode(NeutralMode.Brake);
-        rightTalon.setNeutralMode(NeutralMode.Brake);
-        rightVictor1.setNeutralMode(NeutralMode.Brake);
-        rightVictor2.setNeutralMode(NeutralMode.Brake);
+    private final Encoder m_rightEncoder =
+    new Encoder(Constants.kRightEncoderPorts[0], Constants.kRightEncoderPorts[1],
+                Constants.kRightEncoderReversed);
 
-        rightTalon.setInverted(true);
-        rightVictor1.setInverted(true);
-        rightVictor2.setInverted(true);
-//        leftVictor1.set(VictorSPXControlMode.Follower, Constants.LEFT_VICTOR_1);
-//        leftVictor2.set(VictorSPXControlMode.Follower, Constants.LEFT_VICTOR_2);
-//        rightVictor1.set(VictorSPXControlMode.Follower, Constants.RIGHT_VICTOR_1);
-//        rightVictor2.set(VictorSPXControlMode.Follower, Constants.RIGHT_VICTOR_2);
-                
-    }
+  // The gyro sensor
+  private final Gyro gyro = new ADXRS450_Gyro();
 
-    public void drive(double leftPower, double rightPower) {
-        leftTalon.set(ControlMode.PercentOutput, leftPower);
-        leftVictor1.set(ControlMode.PercentOutput, leftPower);
-        leftVictor2.set(ControlMode.PercentOutput, leftPower);
-        rightTalon.set(ControlMode.PercentOutput, rightPower);
-        rightVictor1.set(ControlMode.PercentOutput, rightPower);
-        rightVictor2.set(ControlMode.PercentOutput, rightPower);
-    }
+  // private final Accelerometer accel = new 
 
-    public void stopDrive() {
-        leftTalon.set(ControlMode.PercentOutput, 0);
-        leftVictor1.set(ControlMode.PercentOutput, 0);
-        leftVictor2.set(ControlMode.PercentOutput, 0);
-        rightTalon.set(ControlMode.PercentOutput, 0);
-        rightVictor1.set(ControlMode.PercentOutput, 0);
-        rightVictor2.set(ControlMode.PercentOutput, 0);
-    }
+  // Odometry class for tracking robot pose
+  private final DifferentialDriveOdometry m_odometry;
 
-    public double getLeftEncoder() {
-        return (leftEncoder.get() * Constants.DISTANCE_PER_PULSE);
-    }
+  /** Creates a new DriveSubsystem. */
+  public DrivetrainSubsystem() {
+    // Sets the distance per pulse for the encoders
+    m_leftEncoder.setDistancePerPulse(Constants.kEncoderDistancePerPulse);
+    m_rightEncoder.setDistancePerPulse(Constants.kEncoderDistancePerPulse);
 
-    public double getRightEncoder() {
-        return (-rightEncoder.get() * Constants.DISTANCE_PER_PULSE);
-    }
+    resetEncoders();
+    m_odometry = new DifferentialDriveOdometry(gyro.getRotation2d());
+  }
 
-    public double getAverageEncoder() {
-        return (getLeftEncoder() + getRightEncoder()) / 2;
-    }
+  @Override
+  public void periodic() {
+    // Update the odometry in the periodic block
+    m_odometry.update(gyro.getRotation2d(), m_leftEncoder.getDistance(),
+                      m_rightEncoder.getDistance());
+  }
 
-    public void resetEncoder() {
-        leftEncoder.reset();
-        rightEncoder.reset();
-    }
+  /**
+   * Returns the currently-estimated pose of the robot.
+   *
+   * @return The pose.
+   */
+  public Pose2d getPose() {
+    return m_odometry.getPoseMeters();
+  }
 
-    public void driveWithMinPower(double leftPower, double rightPower, double minAbsolutePower) {
-        double realLeftPower = (leftPower / Math.abs(leftPower)) * Math.max(Math.abs(leftPower), minAbsolutePower);
-        double realRightPower = (rightPower / Math.abs(rightPower)) * Math.max(Math.abs(rightPower), minAbsolutePower);
-    }
+  /**
+   * Returns the current wheel speeds of the robot.
+   *
+   * @return The current wheel speeds.
+   */
+  public DifferentialDriveWheelSpeeds getWheelSpeeds() {
+    return new DifferentialDriveWheelSpeeds(m_leftEncoder.getRate(), m_rightEncoder.getRate());
+  }
 
-    @Override
-    public void periodic() {
+  /**
+   * Resets the odometry to the specified pose.
+   *
+   * @param pose The pose to which to set the odometry.
+   */
+  public void resetOdometry(Pose2d pose) {
+    resetEncoders();
+    m_odometry.resetPosition(pose, gyro.getRotation2d());
+  }
 
-        // System.out.println("drivetrain periodic");
+  /**
+   * Drives the robot using arcade controls.
+   *
+   * @param fwd the commanded forward movement
+   * @param rot the commanded rotation
+   */
+  public void arcadeDrive(double fwd, double rot) {
+    m_drive.arcadeDrive(fwd, rot);
+  }
 
-//        NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
-//        NetworkTableEntry tx = table.getEntry("tx");
-//        NetworkTableEntry ty = table.getEntry("ty");
-//        NetworkTableEntry ta = table.getEntry("ta");
+  /**
+   * Controls the left and right sides of the drive directly with voltages.
+   *
+   * @param leftVolts  the commanded left output
+   * @param rightVolts the commanded right output
+   */
+  public void tankDriveVolts(double leftVolts, double rightVolts) {
+    m_leftMotors.setVoltage(leftVolts);
+    m_rightMotors.setVoltage(-rightVolts);
+    m_drive.feed();
+  }
 
-//read values periodically
-//        double x = tx.getDouble(0.0);
-//        double y = ty.getDouble(0.0);
-//        double area = ta.getDouble(0.0);
+  /**
+   * Resets the drive encoders to currently read a position of 0.
+   */
+  public void resetEncoders() {
+    m_leftEncoder.reset();
+    m_rightEncoder.reset();
+  }
 
-        // post to smart dashboard periodically
-//        SmartDashboard.putNumber("LimelightX", x);
-//        SmartDashboard.putNumber("LimelightY", y);
-//        SmartDashboard.putNumber("LimelightArea", area);
+  /**
+   * Gets the average distance of the two encoders.
+   *
+   * @return the average of the two encoder readings
+   */
+  public double getAverageEncoderDistance() {
+    return (m_leftEncoder.getDistance() + m_rightEncoder.getDistance()) / 2.0;
+  }
 
+  
+  /**
+   * Sets the max output of the drive.  Useful for scaling the drive to drive more slowly.
+   *
+   * @param maxOutput the maximum output to which the drive will be constrained
+   */
+  public void setMaxOutput(double maxOutput) {
+    m_drive.setMaxOutput(maxOutput);
+  }
 
-//
-//        System.out.println("Right Encoder: " + getRightEncoder());
-//        System.out.println("Left Encoder: " + getLeftEncoder());
-//        System.out.println("Average Encoder: " + getAverageEncoder());
-    }
+  /**
+   * Zeroes the heading of the robot.
+   */
+  public void zeroHeading() {
+    gyro.reset();
+  }
 
+  /**
+   * Returns the heading of the robot.
+   *
+   * @return the robot's heading in degrees, from -180 to 180
+   */
+  public double getHeading() {
+    return gyro.getRotation2d().getDegrees();
+  }
+
+  /**
+   * Returns the turn rate of the robot.
+   *
+   * @return The turn rate of the robot, in degrees per second
+   */
+  public double getTurnRate() {
+    return -gyro.getRate();
+  }
+
+  public void drive(double leftPower, double rightPower) {
+    leftTalon1.set(leftPower);
+    leftVictor1.set(leftPower);
+    leftVictor2.set(leftPower);
+    rightTalon1.set(rightPower);
+    rightVictor1.set(rightPower);
+    rightVictor2.set(rightPower);
 }
 
+public void stopDrive() {
+    leftTalon1.set(0);
+    leftVictor1.set(0);
+    leftVictor2.set(0);
+    rightTalon1.set(0);
+    rightVictor1.set(0);
+    rightVictor2.set(0);
+}
+
+public double getLeftEncoder() {
+    return (m_leftEncoder.get() * Constants.DISTANCE_PER_PULSE);
+}
+
+public double getRightEncoder() {
+    return (-m_rightEncoder.get() * Constants.DISTANCE_PER_PULSE);
+}
+
+public double getAverageEncoder() {
+    return (getLeftEncoder() + getRightEncoder()) / 2;
+}
+
+public void resetEncoder() {
+    m_leftEncoder.reset();
+    m_rightEncoder.reset();
+}
+
+public void driveWithMinPower(double leftPower, double rightPower, double minAbsolutePower) {
+    double realLeftPower = (leftPower / Math.abs(leftPower)) * Math.max(Math.abs(leftPower), minAbsolutePower);
+    double realRightPower = (rightPower / Math.abs(rightPower)) * Math.max(Math.abs(rightPower), minAbsolutePower);
+}
+
+}
