@@ -3,6 +3,8 @@ package frc.robot.subsystems;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.InvertType;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
@@ -26,21 +28,15 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class DrivetrainSubsystem extends SubsystemBase {
-  private final PWMTalonSRX leftTalon1 = new PWMTalonSRX(Constants.kLeftMotor1Port);
-  private final PWMVictorSPX leftVictor1 = new PWMVictorSPX(Constants.kLeftMotor2Port);
-  private final PWMVictorSPX leftVictor2 = new PWMVictorSPX(Constants.kLeftMotor3Port);
+    private final Talon leftTalon1 = new Talon(Constants.kLeftMotor1Port);
+    private final Victor leftVictor1 = new Victor(Constants.kLeftMotor2Port);
+    private final Victor leftVictor2 = new Victor(Constants.kLeftMotor3Port);
 
-  private final PWMTalonSRX rightTalon1 = new PWMTalonSRX(Constants.kRightMotor1Port);
-  private final PWMVictorSPX rightVictor1 = new PWMVictorSPX(Constants.kRightMotor2Port);
-  private final PWMVictorSPX rightVictor2 = new PWMVictorSPX(Constants.kRightMotor3Port);
+  private final Talon rightTalon1 = new Talon(Constants.kRightMotor1Port);
+  private final Victor rightVictor1 = new Victor(Constants.kRightMotor2Port);
+  private final Victor rightVictor2 = new Victor(Constants.kRightMotor3Port);
 
-  // The robot's drive
-  private final SpeedControllerGroup m_leftMotors =
-      new SpeedControllerGroup(leftTalon1, leftVictor1, leftVictor2);
-    private final SpeedControllerGroup m_rightMotors =
-      new SpeedControllerGroup(rightTalon1, rightVictor1, rightVictor2);
-
-    public final DifferentialDrive m_drive = new DifferentialDrive(m_leftMotors, m_rightMotors);
+    public final DifferentialDrive m_drive = new DifferentialDrive(leftTalon1, rightTalon1);
 
     private final Encoder m_leftEncoder =
       new Encoder(Constants.kLeftEncoderPorts[0], Constants.kLeftEncoderPorts[1],
@@ -120,8 +116,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @param rightVolts the commanded right output
    */
   public void tankDriveVolts(double leftVolts, double rightVolts) {
-    m_leftMotors.setVoltage(leftVolts);
-    m_rightMotors.setVoltage(-rightVolts);
+    leftTalon1.setVoltage(leftVolts);
+    rightTalon1.setVoltage(-rightVolts);
     m_drive.feed();
   }
 
