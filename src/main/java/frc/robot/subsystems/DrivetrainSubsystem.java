@@ -9,6 +9,7 @@ import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Encoder;
@@ -28,23 +29,23 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class DrivetrainSubsystem extends SubsystemBase {
-    private final Talon leftTalon1 = new Talon(Constants.kLeftMotor1Port);
-    private final Victor leftVictor1 = new Victor(Constants.kLeftMotor2Port);
-    private final Victor leftVictor2 = new Victor(Constants.kLeftMotor3Port);
+  private final WPI_TalonSRX leftTalon1 = new WPI_TalonSRX(Constants.kLeftMotor1Port);
+  private final Victor leftVictor1 = new Victor(Constants.kLeftMotor2Port);
+  private final Victor leftVictor2 = new Victor(Constants.kLeftMotor3Port);
 
-  private final Talon rightTalon1 = new Talon(Constants.kRightMotor1Port);
+  private final WPI_TalonSRX rightTalon1 = new WPI_TalonSRX(Constants.kRightMotor1Port);
   private final Victor rightVictor1 = new Victor(Constants.kRightMotor2Port);
   private final Victor rightVictor2 = new Victor(Constants.kRightMotor3Port);
 
     public final DifferentialDrive m_drive = new DifferentialDrive(leftTalon1, rightTalon1);
 
-    private final Encoder m_leftEncoder =
-      new Encoder(Constants.kLeftEncoderPorts[0], Constants.kLeftEncoderPorts[1],
-                  Constants.kLeftEncoderReversed);
+  private final Encoder m_leftEncoder =
+    new Encoder(Constants.kLeftEncoderPorts[0], Constants.kLeftEncoderPorts[1],
+                Constants.kLeftEncoderReversed);
 
-    private final Encoder m_rightEncoder =
-    new Encoder(Constants.kRightEncoderPorts[0], Constants.kRightEncoderPorts[1],
-                Constants.kRightEncoderReversed);
+  private final Encoder m_rightEncoder =
+  new Encoder(Constants.kRightEncoderPorts[0], Constants.kRightEncoderPorts[1],
+              Constants.kRightEncoderReversed);
 
   // The gyro sensor
   private final Gyro gyro = new ADXRS450_Gyro();

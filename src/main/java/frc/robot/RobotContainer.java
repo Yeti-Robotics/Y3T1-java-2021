@@ -7,8 +7,12 @@
 
 package frc.robot;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.controller.RamseteController;
@@ -19,6 +23,7 @@ import edu.wpi.first.wpilibj.geometry.Translation2d;
 import edu.wpi.first.wpilibj.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
+import edu.wpi.first.wpilibj.trajectory.TrajectoryUtil;
 import edu.wpi.first.wpilibj.trajectory.constraint.DifferentialDriveVoltageConstraint;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandBase;
@@ -35,6 +40,7 @@ import frc.robot.commands.drivetrain.DriveForDistanceCommand;
 import frc.robot.commands.drivetrain.ResetEncodersCommand;
 import frc.robot.commands.drivetrain.StopDriveCommand;
 import frc.robot.commands.drivetrain.TurnNoPIDCommand;
+import frc.robot.commands.drivetrain.TurnToTargetCommand;
 import frc.robot.commands.hopper.HopperOutCommand;
 import frc.robot.commands.hopper.StopFunnelCommand;
 import frc.robot.commands.intake.*;
@@ -56,7 +62,6 @@ import frc.robot.utils.Limelight;
  * commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
-  private final DrivetrainSubsystem m_drive = new DrivetrainSubsystem();
 
   // The robot's subsystems and commands are defined here...
   // public final Joystick leftJoy;
@@ -65,7 +70,7 @@ public class RobotContainer {
   // private WheelOfFortuneSubsystem wheelOfFortuneSubsystem;
   public final Joystick driverStationJoy;
   Joystick servoJoy;
-  public DrivetrainSubsystem drivetrainSubsystem;
+  public final DrivetrainSubsystem drivetrainSubsystem;
   public IntakeSubsystem intakeSubsystem;
   public NeckSubsystem neckSubsystem;
   public ShooterSubsystem shooterSubsystem;
@@ -91,7 +96,7 @@ public class RobotContainer {
 
 
     //enable this to drive!!
-    // drivetrainSubsystem.setDefaultCommand(new RunCommand(() -> drivetrainSubsystem.drive(getLeftY(), getRightY()), drivetrainSubsystem));
+    drivetrainSubsystem.setDefaultCommand(new RunCommand(() -> drivetrainSubsystem.drive(getLeftY(), -getRightY()), drivetrainSubsystem));
 
     configureButtonBindings();
   }
@@ -154,7 +159,8 @@ public class RobotContainer {
     setJoystickButtonWhenPressed(driverStationJoy, 11, new ToggleShiftingCommand(shiftGearsSubsystem));
 
     //Turn to target No PID
-    setJoystickButtonWhenPressed(driverStationJoy, 12, new TurnNoPIDCommand(drivetrainSubsystem, limelight));
+    setJoystickButtonWhenPressed(driverStationJoy, 7, new TurnNoPIDCommand(drivetrainSubsystem, limelight));
+    setJoystickButtonWhenPressed(driverStationJoy, 8, new TurnToTargetCommand(drivetrainSubsystem));
 
   }
 
@@ -224,6 +230,7 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
+    System.out.println("it do be driving");
 
     // Create a voltage constraint to ensure we don't accelerate too fast
     var autoVoltageConstraint =
@@ -243,41 +250,43 @@ public class RobotContainer {
             // Apply the voltage constraint
             .addConstraint(autoVoltageConstraint);
 
-    // An example trajectory to follow.  All units in meters.
-    Trajectory exampleTrajectory = TrajectoryGenerator.generateTrajectory(
-        // Start at the origin facing the +X direction
-        new Pose2d(0, 0, new Rotation2d(0)),
-        // Pass through these two interior waypoints, making an 's' curve path
-        List.of(
-            new Translation2d(1, 1),
-            new Translation2d(2, -1)
-        ),
-        // End 3 meters straight ahead of where we started, facing forward
-        new Pose2d(3, 0, new Rotation2d(0)),
-        // Pass config
-        config
-    );
+    Trajectory customTrajectory = customTrajectory();
 
     RamseteCommand ramseteCommand = new RamseteCommand(
-        exampleTrajectory,
-        m_drive::getPose,
+        customTrajectory,
+        drivetrainSubsystem::getPose,
         new RamseteController(Constants.kRamseteB, Constants.kRamseteZeta),
         new SimpleMotorFeedforward(Constants.ksVolts,
                                    Constants.kvVoltSecondsPerMeter,
                                    Constants.kaVoltSecondsSquaredPerMeter),
         Constants.kDriveKinematics,
-        m_drive::getWheelSpeeds,
+        drivetrainSubsystem::getWheelSpeeds,
         new PIDController(Constants.kPDriveVel, 0, 0),
         new PIDController(Constants.kPDriveVel, 0, 0),
         // RamseteCommand passes volts to the callback
-        m_drive::tankDriveVolts,
-        m_drive
+        drivetrainSubsystem::tankDriveVolts,
+        drivetrainSubsystem
     );
 
     // Reset odometry to the starting pose of the trajectory.
-    m_drive.resetOdometry(exampleTrajectory.getInitialPose());
+    drivetrainSubsystem.resetOdometry(customTrajectory.getInitialPose());
 
     // Run path following command, then stop at the end.
-    return ramseteCommand.andThen(() -> m_drive.tankDriveVolts(0, 0));
+    return ramseteCommand.andThen(() -> drivetrainSubsystem.tankDriveVolts(0, 0));
+  }
+
+  public Trajectory customTrajectory(){
+    String trajectoryJSON = "paths/pathuno.wpilib.json";
+    Trajectory trajectory;
+    // Trajectory trajectory = new Trajectory();
+    System.out.println("PathWeaverTest initialized");
+    try {
+      Path trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
+      trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
+      return trajectory;
+    } catch (IOException ex) {
+      DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON, ex.getStackTrace());
+      return null;
+    }
   }
 }
