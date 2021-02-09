@@ -62,6 +62,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     m_rightEncoder.setDistancePerPulse(Constants.kEncoderDistancePerPulse);
 
     resetEncoders();
+    resetGyro();
+    gyro.calibrate();
     m_odometry = new DifferentialDriveOdometry(gyro.getRotation2d());
   }
 
@@ -70,6 +72,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     // Update the odometry in the periodic block
     m_odometry.update(gyro.getRotation2d(), m_leftEncoder.getDistance(),
                       m_rightEncoder.getDistance());
+    System.out.println(gyro.getAngle());
   }
 
   /**
@@ -154,6 +157,14 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void zeroHeading() {
     gyro.reset();
+  }
+
+  public void resetGyro(){
+    gyro.reset();
+  }
+
+  public double getAngle(){
+    return gyro.getAngle();
   }
 
   /**

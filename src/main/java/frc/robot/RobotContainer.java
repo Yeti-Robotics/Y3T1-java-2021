@@ -34,6 +34,7 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.autoRoutines.ShootCommandGroup;
 import frc.robot.autoRoutines.ShootWithTurnCommandGroup;
+import frc.robot.autoRoutines.SlalomPath;
 import frc.robot.commands.climbing.ClimbDownCommand;
 import frc.robot.commands.climbing.ClimbUpCommand;
 import frc.robot.commands.drivetrain.DriveForDistanceCommand;
@@ -160,7 +161,7 @@ public class RobotContainer {
 
     //Turn to target No PID
     setJoystickButtonWhenPressed(driverStationJoy, 7, new TurnNoPIDCommand(drivetrainSubsystem, limelight));
-    setJoystickButtonWhenPressed(driverStationJoy, 8, new TurnToTargetCommand(drivetrainSubsystem));
+    setJoystickButtonWhenPressed(driverStationJoy, 8, new DriveForDistanceCommand(drivetrainSubsystem, 24, .5, .5));
 
   }
 
@@ -230,63 +231,64 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    System.out.println("it do be driving");
+    return new SlalomPath(drivetrainSubsystem);
+  //   System.out.println("it do be driving");
 
-    // Create a voltage constraint to ensure we don't accelerate too fast
-    var autoVoltageConstraint =
-        new DifferentialDriveVoltageConstraint(
-            new SimpleMotorFeedforward(Constants.ksVolts,
-                                       Constants.kvVoltSecondsPerMeter,
-                                       Constants.kaVoltSecondsSquaredPerMeter),
-            Constants.kDriveKinematics,
-            10);
+  //   // Create a voltage constraint to ensure we don't accelerate too fast
+  //   var autoVoltageConstraint =
+  //       new DifferentialDriveVoltageConstraint(
+  //           new SimpleMotorFeedforward(Constants.ksVolts,
+  //                                      Constants.kvVoltSecondsPerMeter,
+  //                                      Constants.kaVoltSecondsSquaredPerMeter),
+  //           Constants.kDriveKinematics,
+  //           10);
 
-    // Create config for trajectory
-    TrajectoryConfig config =
-        new TrajectoryConfig(Constants.kMaxSpeedMetersPerSecond,
-                             Constants.kMaxAccelerationMetersPerSecondSquared)
-            // Add kinematics to ensure max speed is actually obeyed
-            .setKinematics(Constants.kDriveKinematics)
-            // Apply the voltage constraint
-            .addConstraint(autoVoltageConstraint);
+  //   // Create config for trajectory
+  //   TrajectoryConfig config =
+  //       new TrajectoryConfig(Constants.kMaxSpeedMetersPerSecond,
+  //                            Constants.kMaxAccelerationMetersPerSecondSquared)
+  //           // Add kinematics to ensure max speed is actually obeyed
+  //           .setKinematics(Constants.kDriveKinematics)
+  //           // Apply the voltage constraint
+  //           .addConstraint(autoVoltageConstraint);
 
-    Trajectory customTrajectory = customTrajectory();
+  //   Trajectory customTrajectory = customTrajectory();
 
-    RamseteCommand ramseteCommand = new RamseteCommand(
-        customTrajectory,
-        drivetrainSubsystem::getPose,
-        new RamseteController(Constants.kRamseteB, Constants.kRamseteZeta),
-        new SimpleMotorFeedforward(Constants.ksVolts,
-                                   Constants.kvVoltSecondsPerMeter,
-                                   Constants.kaVoltSecondsSquaredPerMeter),
-        Constants.kDriveKinematics,
-        drivetrainSubsystem::getWheelSpeeds,
-        new PIDController(Constants.kPDriveVel, 0, 0),
-        new PIDController(Constants.kPDriveVel, 0, 0),
-        // RamseteCommand passes volts to the callback
-        drivetrainSubsystem::tankDriveVolts,
-        drivetrainSubsystem
-    );
+  //   RamseteCommand ramseteCommand = new RamseteCommand(
+  //       customTrajectory,
+  //       drivetrainSubsystem::getPose,
+  //       new RamseteController(Constants.kRamseteB, Constants.kRamseteZeta),
+  //       new SimpleMotorFeedforward(Constants.ksVolts,
+  //                                  Constants.kvVoltSecondsPerMeter,
+  //                                  Constants.kaVoltSecondsSquaredPerMeter),
+  //       Constants.kDriveKinematics,
+  //       drivetrainSubsystem::getWheelSpeeds,
+  //       new PIDController(Constants.kPDriveVel, 0, 0),
+  //       new PIDController(Constants.kPDriveVel, 0, 0),
+  //       // RamseteCommand passes volts to the callback
+  //       drivetrainSubsystem::tankDriveVolts,
+  //       drivetrainSubsystem
+  //   );
 
-    // Reset odometry to the starting pose of the trajectory.
-    drivetrainSubsystem.resetOdometry(customTrajectory.getInitialPose());
+  //   // Reset odometry to the starting pose of the trajectory.
+  //   drivetrainSubsystem.resetOdometry(customTrajectory.getInitialPose());
 
-    // Run path following command, then stop at the end.
-    return ramseteCommand.andThen(() -> drivetrainSubsystem.tankDriveVolts(0, 0));
-  }
+  //   // Run path following command, then stop at the end.
+  //   return ramseteCommand.andThen(() -> drivetrainSubsystem.tankDriveVolts(0, 0));
+  // }
 
-  public Trajectory customTrajectory(){
-    String trajectoryJSON = "paths/pathuno.wpilib.json";
-    Trajectory trajectory;
-    // Trajectory trajectory = new Trajectory();
-    System.out.println("PathWeaverTest initialized");
-    try {
-      Path trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
-      trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
-      return trajectory;
-    } catch (IOException ex) {
-      DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON, ex.getStackTrace());
-      return null;
-    }
+  // public Trajectory customTrajectory(){
+  //   String trajectoryJSON = "paths/pathuno.wpilib.json";
+  //   Trajectory trajectory;
+  //   // Trajectory trajectory = new Trajectory();
+  //   System.out.println("PathWeaverTest initialized");
+  //   try {
+  //     Path trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
+  //     trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
+  //     return trajectory;
+  //   } catch (IOException ex) {
+  //     DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON, ex.getStackTrace());
+  //     return null;
+  //   }
   }
 }

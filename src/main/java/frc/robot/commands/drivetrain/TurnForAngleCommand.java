@@ -4,39 +4,42 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.DrivetrainSubsystem;
 
 
-public class DriveForDistanceCommand extends CommandBase {
+public class TurnForAngleCommand extends CommandBase {
     private final DrivetrainSubsystem drivetrainSubsystem;
-    private double distanceGoal;
     private double leftPower;
     private double rightPower;
+    private double gyroGoal;
 
-    public DriveForDistanceCommand(DrivetrainSubsystem drivetrainSubsystem, double encoderGoal, double leftPower, double rightPower) {
+    public TurnForAngleCommand(DrivetrainSubsystem drivetrainSubsystem, double gyroGoal, double leftPower, double rightPower) {
         this.drivetrainSubsystem = drivetrainSubsystem;
-        this.distanceGoal = encoderGoal;
         this.leftPower = leftPower;
         this.rightPower = rightPower;
+        this.gyroGoal = gyroGoal;
         addRequirements(drivetrainSubsystem);
     }
 
     @Override
     public void initialize() {
-        drivetrainSubsystem.resetEncoder();
+        drivetrainSubsystem.resetGyro();
     }
 
     @Override
     public void execute() {
-        drivetrainSubsystem.drive(leftPower, rightPower);
-        System.out.println("Distance" + distanceGoal + "; Encoder" + this.drivetrainSubsystem.getAverageEncoder());
+        if(gyroGoal < 0){
+            drivetrainSubsystem.drive(-leftPower, rightPower);
+        } else {
+            drivetrainSubsystem.drive(leftPower, -rightPower);
+        }
     }
 
     @Override
     public boolean isFinished() {
-        return distanceGoal <= this.drivetrainSubsystem.getAverageEncoder();
+        return Math.abs(gyroGoal) <= this.drivetrainSubsystem.getAngle();
     }
 
     @Override
     public void end(boolean interrupted) {
-        System.out.println("drove forward");
+        System.out.println("drove TURN");
         drivetrainSubsystem.stopDrive();
     }
 }
