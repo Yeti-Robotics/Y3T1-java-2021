@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.util.WPILibVersion;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.utils.Limelight;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final WPI_TalonSRX leftTalon1 = new WPI_TalonSRX(Constants.kLeftMotor1Port);
@@ -67,12 +68,16 @@ public class DrivetrainSubsystem extends SubsystemBase {
     m_odometry = new DifferentialDriveOdometry(gyro.getRotation2d());
   }
 
+  public double getHeadingLimelight() {
+    return Limelight.getTx();
+  }
+
   @Override
   public void periodic() {
     // Update the odometry in the periodic block
     m_odometry.update(gyro.getRotation2d(), m_leftEncoder.getDistance(),
                       m_rightEncoder.getDistance());
-    System.out.println(gyro.getAngle());
+    //System.out.println(gyro.getAngle());
   }
 
   /**

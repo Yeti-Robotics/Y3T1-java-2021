@@ -7,51 +7,37 @@
 
 package frc.robot;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
-
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.controller.PIDController;
-import edu.wpi.first.wpilibj.controller.RamseteController;
-import edu.wpi.first.wpilibj.controller.SimpleMotorFeedforward;
-import edu.wpi.first.wpilibj.geometry.Pose2d;
-import edu.wpi.first.wpilibj.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.geometry.Translation2d;
-import edu.wpi.first.wpilibj.trajectory.Trajectory;
-import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
-import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
-import edu.wpi.first.wpilibj.trajectory.TrajectoryUtil;
-import edu.wpi.first.wpilibj.trajectory.constraint.DifferentialDriveVoltageConstraint;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.RamseteCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import frc.robot.autoRoutines.ShootCommandGroup;
-import frc.robot.autoRoutines.ShootWithTurnCommandGroup;
 import frc.robot.autoRoutines.SlalomPath;
-import frc.robot.commands.climbing.ClimbDownCommand;
-import frc.robot.commands.climbing.ClimbUpCommand;
 import frc.robot.commands.drivetrain.DriveForDistanceCommand;
-import frc.robot.commands.drivetrain.ResetEncodersCommand;
-import frc.robot.commands.drivetrain.StopDriveCommand;
 import frc.robot.commands.drivetrain.TurnNoPIDCommand;
-import frc.robot.commands.drivetrain.TurnToTargetCommand;
-import frc.robot.commands.hopper.HopperOutCommand;
-import frc.robot.commands.hopper.StopFunnelCommand;
-import frc.robot.commands.intake.*;
-import frc.robot.commands.neck.MoveDownNeckCommand;
-import frc.robot.commands.neck.StopNeckCommand;
-import frc.robot.commands.shifting.ToggleShiftingCommand;
-import frc.robot.commands.neck.MoveUpNeckCommand;
+import frc.robot.commands.drivetrain.TurnToTargetPIDCommand;
+import frc.robot.commands.drivetrain.TurnWithoutPIDCommand;
 import frc.robot.commands.hopper.HopperInCommand;
-import frc.robot.commands.shooting.*;
-import frc.robot.subsystems.*;
+import frc.robot.commands.hopper.HopperOutCommand;
+import frc.robot.commands.intake.ExtendIntakeCommand;
+import frc.robot.commands.intake.IntakeInCommand;
+import frc.robot.commands.intake.IntakeOutCommand;
+import frc.robot.commands.intake.ToggleIntakeCommand;
+import frc.robot.commands.neck.MoveDownNeckCommand;
+import frc.robot.commands.neck.MoveUpNeckCommand;
+import frc.robot.commands.shifting.ToggleShiftingCommand;
+import frc.robot.commands.shooting.SpinWithStopCommand;
+import frc.robot.commands.shooting.TestHoodMotorCommand;
+import frc.robot.commands.shooting.TestServoCommand;
+import frc.robot.commands.shooting.ToggleShooterCommand;
+import frc.robot.subsystems.ClimberSubsystem;
+import frc.robot.subsystems.DrivetrainSubsystem;
+import frc.robot.subsystems.HopperSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.NeckSubsystem;
+import frc.robot.subsystems.ShiftGearsSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.utils.Limelight;
 //import frc.robot.utils.DoubleButton;
 
@@ -104,37 +90,39 @@ public class RobotContainer {
 
   private void configureButtonBindings() {
 
-    //Intake Pistons
-    setJoystickButtonWhenPressed(driverStationJoy, 6, new ToggleIntakeCommand(intakeSubsystem));
+    // //Intake Pistons
+    // setJoystickButtonWhenPressed(driverStationJoy, 6, new ToggleIntakeCommand(intakeSubsystem));
 
-    //Intake, Hopper, Neck (no shooter)
-    setJoystickButtonWhileHeld(driverStationJoy, 7, new ParallelCommandGroup(
-            new IntakeInCommand(intakeSubsystem),
-            new MoveUpNeckCommand(neckSubsystem),
-            new HopperInCommand(hopperSubsystem)));
+    // //Intake, Hopper, Neck (no shooter)
+    // setJoystickButtonWhileHeld(driverStationJoy, 7, new ParallelCommandGroup(
+    //         new IntakeInCommand(intakeSubsystem),
+    //         new MoveUpNeckCommand(neckSubsystem),
+    //         new HopperInCommand(hopperSubsystem)));
 
-    //Runs intake and hopper
-    setJoystickButtonWhileHeld(driverStationJoy, 8, new ParallelCommandGroup(
-      new IntakeInCommand(intakeSubsystem),
-      new HopperInCommand(hopperSubsystem)));
+    // //Runs intake and hopper
+    // setJoystickButtonWhileHeld(driverStationJoy, 8, new ParallelCommandGroup(
+    //   new IntakeInCommand(intakeSubsystem),
+    //   new HopperInCommand(hopperSubsystem)));
       
-    //shooter toggle
-    setJoystickButtonWhenPressed(driverStationJoy, 9, new ToggleShooterCommand(shooterSubsystem));
+    // //shooter toggle
+    // setJoystickButtonWhenPressed(driverStationJoy, 9, new ToggleShooterCommand(shooterSubsystem));
 
-    //Intake, Hopper, Tower, Shooter (all)
-    setJoystickButtonWhileHeld(driverStationJoy, 10, new ParallelCommandGroup(
-            new IntakeInCommand(intakeSubsystem),
-            new HopperInCommand(hopperSubsystem),
-            new MoveUpNeckCommand(neckSubsystem),
-            new SpinWithStopCommand(shooterSubsystem))
-    );
+    // //Intake, Hopper, Tower, Shooter (all)
+    // setJoystickButtonWhileHeld(driverStationJoy, 10, new ParallelCommandGroup(
+    //         new IntakeInCommand(intakeSubsystem),
+    //         new HopperInCommand(hopperSubsystem),
+    //         new MoveUpNeckCommand(neckSubsystem),
+    //         new SpinWithStopCommand(shooterSubsystem))
+    // );
 
-    //runs everything but shooter backwards
-    setJoystickButtonWhileHeld(driverStationJoy, 1, new ParallelCommandGroup(
-      new IntakeOutCommand(intakeSubsystem),
-      new HopperOutCommand(hopperSubsystem),
-      new MoveDownNeckCommand(neckSubsystem)
-    ));
+    // //runs everything but shooter backwards
+    // setJoystickButtonWhileHeld(driverStationJoy, 1, new ParallelCommandGroup(
+    //   new IntakeOutCommand(intakeSubsystem),
+    //   new HopperOutCommand(hopperSubsystem),
+    //   new MoveDownNeckCommand(neckSubsystem)
+    // ));
+
+
     
     //Climber Up
 //    setJoystickButtonWhileHeld(driverStationJoy, 2, new ClimbUpCommand(climberSubsystem));
@@ -162,6 +150,8 @@ public class RobotContainer {
     //Turn to target No PID
     setJoystickButtonWhenPressed(driverStationJoy, 7, new TurnNoPIDCommand(drivetrainSubsystem, limelight));
     setJoystickButtonWhenPressed(driverStationJoy, 8, new DriveForDistanceCommand(drivetrainSubsystem, 24, .5, .5));
+
+    setJoystickButtonWhenPressed(driverStationJoy, 6, new TurnToTargetPIDCommand(drivetrainSubsystem));
 
   }
 

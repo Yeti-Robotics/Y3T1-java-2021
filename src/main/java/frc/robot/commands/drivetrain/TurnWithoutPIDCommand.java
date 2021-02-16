@@ -17,23 +17,26 @@ public class TurnWithoutPIDCommand extends CommandBase {
 
     @Override
     public void initialize() {
-
+        System.out.println("Initialized");
     }
 
     @Override
     public void execute() {
+        System.out.println("Executing");
+        System.out.println("Limelight: " + limelight.getTx());
         if(limelight.getTx()<0){
-            drivetrainSubsystem.drive(-0.4,0.4);
+            drivetrainSubsystem.drive(-0.69,-0.69);
             System.out.println("turning left");
         }else if(limelight.getTx()>0){
-            drivetrainSubsystem.drive(0.4,-0.4);
+            drivetrainSubsystem.drive(0.69,0.69);
             System.out.println("turning right");
         }
     }
 
     @Override
     public boolean isFinished() {
-        return limelight.getTx() < .1 || limelight.getTx() > -.1;
+        System.out.println("Finished");
+        return limelight.getTx() < .1 && limelight.getTx() > -.1;
     }
 
     @Override
